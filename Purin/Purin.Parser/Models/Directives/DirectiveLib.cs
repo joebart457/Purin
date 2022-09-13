@@ -1,19 +1,17 @@
 ﻿using Purin.Parser.Interfaces;
-using Purin.Parser.Models;
-using Purin.Parser.Models.Statements;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Purin.Parser.Models.Statements
+namespace Purin.Parser.Models.Directives
 {
-    public class StmtProvideLib : BaseStatement
+    public class DirectiveLib : BaseDirective
     {
         public string Path { get; set; } = "";
-        public StmtProvideLib(string path, Location loc)
-            : base("StmtProvideLib", loc)
+        public DirectiveLib(string path, Location loc)
+            : base("DirectiveLib", loc)
         {
             Path = path;
         }

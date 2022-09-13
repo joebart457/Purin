@@ -1,7 +1,10 @@
-﻿using Purin.Interpreter.Interfaces;
+﻿using Purin.Interpreter.Extensions;
+using Purin.Interpreter.Interfaces;
 using Purin.Interpreter.Models;
 using Purin.Interpreter.Models.Exceptions;
+using Purin.NativeTypes;
 using Purin.Parser.Interfaces;
+using Purin.Parser.Models.Directives;
 using Purin.Parser.Models.Enums;
 using Purin.Parser.Models.Expressions;
 using Purin.Parser.Models.Statements;
@@ -11,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using Environment = Purin.Runtime.Models.Environment;
@@ -21,15 +25,44 @@ namespace Purin.Interpreter
     {
         private RuntimeContext _context;
         private BaseExpression? _entry = null;
-
+        private Dictionary<string, string> _operatorLookup = new Dictionary<string, string>();
+        private Dictionary<Type, Type> _typeTranslations = new Dictionary<Type, Type>();
         public Environment Environment
         {
             get { return _context.Environment; }
             set { _context.Environment = value; }
         }
-        public DefaultInterpreter(RuntimeContext? context = null)
+        public DefaultInterpreter(RuntimeContext? context = null, Dictionary<Type, Type>? typeTranslations = null)
         {
             _context = context?? new RuntimeContext();
+            _operatorLookup.Add("==", "op_Equality");
+            _operatorLookup.Add("!=", "op_Inequality");
+            _operatorLookup.Add(">", "op_GreaterThan");
+            _operatorLookup.Add("<", "op_LessThan");
+            _operatorLookup.Add(">=", "op_GreaterThanOrEqual");
+            _operatorLookup.Add("<=", "op_LessThanOrEqual");
+            _operatorLookup.Add("&", "op_BitwiseAnd");
+            _operatorLookup.Add("|", "op_BitwiseOr");
+            _operatorLookup.Add("+", "op_Addition");
+            _operatorLookup.Add("-", "op_Subtraction");
+            _operatorLookup.Add("/", "op_Division");
+            _operatorLookup.Add("%", "op_Modulus");
+            _operatorLookup.Add("*", "op_Multiply");
+            _operatorLookup.Add("<<", "op_LeftShift");
+            _operatorLookup.Add(">>", "op_RightShift");
+            _operatorLookup.Add("^", "op_ExclusiveOr");
+
+            _operatorLookup.Add("!", "op_LogicalNot");
+            _operatorLookup.Add("~", "op_OnesComplement");
+            _operatorLookup.Add("++", "op_Increment");
+            _operatorLookup.Add("--", "op_Decrement");
+            
+            // Custom operators
+            _operatorLookup.Add("&&", "op_And");
+            _operatorLookup.Add("||", "op_Or");
+
+            _typeTranslations = typeTranslations ?? new Dictionary<Type, Type>();
+
         }
 
         public ISubRoutine? GetEntry()
@@ -41,6 +74,56 @@ namespace Purin.Interpreter
                 throw new PurinRuntimeException("unable to convert entry object to type ISubRoutine");
             }
         }
+
+        public void Run(IEnumerable<BaseDirective> directives)
+        {
+            foreach(var directive in directives)
+            {
+                Accept(directive);
+            }
+        }
+
+        public void Accept(BaseDirective directive)
+        {
+            directive.Visit(this);
+        }
+        public void Accept(DirectiveLib directiveLib)
+        {
+            _context.RegisterAssembly(directiveLib.Path);
+        }
+
+        public void Accept(DirectiveEntry directiveEntry)
+        {
+            _entry = directiveEntry.Target;
+        }
+
+        public void Accept(DirectiveUse directiveUse)
+        {
+            // Used by the compiler,
+            // does nothing in runtime
+        }
+
+        public void Accept(DirectiveProvideLib directiveProvideLib)
+        {
+            // Used by the compiler,
+            // does nothing in runtime
+        }
+        public void Accept(DirectiveSubroutine directiveSubroutine)
+        {
+            var parameters = directiveSubroutine.Parameters.Select(param =>
+            {
+                var tyVal = Accept(param.TypeName);
+                if (tyVal is Type type)
+                {
+                    object? value = null;
+                    if (param.Value != null) value = Accept(param.Value);
+                    return new SubRoutine.Parameter(type, param.Name, param.Value != null, value);
+                }
+                throw new PurinRuntimeException($"expected parameter type but got {tyVal?.GetType()}");
+            });
+            _context.Environment.Define(directiveSubroutine.Name, new SubRoutine(directiveSubroutine.Name, parameters.ToList(), directiveSubroutine.Statements));
+        }
+
 
         public object? Accept(BaseExpression expression)
         {
@@ -54,12 +137,19 @@ namespace Purin.Interpreter
 
         public object? Accept(ExprUnary exprUnary)
         {
-            throw new NotImplementedException();
+            if (!_operatorLookup.TryGetValue(exprUnary.Operator, out var translatedOp) || translatedOp == null) 
+                throw new PurinRuntimeException($"unable to find valid lookup for operator {exprUnary.Operator}");
+
+            var rhs = Accept(exprUnary.Rhs);
+            if (rhs == null) throw new PurinRuntimeException($"unable to call operator {exprUnary.Operator} on null value");
+            var operatorMethod = rhs.GetType().GetUnaryOperator(translatedOp);
+            if (operatorMethod == null) throw new PurinRuntimeException($"type {rhs.GetType().Name} does not contain definition for operator {translatedOp}");
+            return operatorMethod.Invoke(rhs.GetType(), new object?[1] {rhs});
         }
 
         public object? Accept(ExprAssignment exprAssignment)
         {
-            var lhs = Accept(exprAssignment.Lhs);
+            var lhs = exprAssignment.Lhs;
             var value = Accept(exprAssignment.Value);
 
             if (lhs is ExprIdentifier identifier)
@@ -73,7 +163,12 @@ namespace Purin.Interpreter
                 {
                     var target = Accept(get.Lhs);
                     if (target == null) throw new PurinRuntimeException($"unable to assign property {get.Name} of null value");
-                    var property = target.GetType().GetProperty(get.Name);
+                    var type = target.GetType();
+                    if (target is Type tyVal)
+                    {
+                        type = tyVal;
+                    }
+                    var property = type.GetProperty(get.Name);
                     if (property == null) throw new PurinRuntimeException($"property {get.Name} does not exist on object {target}");
                     property.SetValue(target, value);
                     return value;
@@ -82,7 +177,12 @@ namespace Purin.Interpreter
                 {
                     var target = Accept(get.Lhs);
                     if (target == null) throw new PurinRuntimeException($"unable to assign field {get.Name} of null value");
-                    var field = target.GetType().GetField(get.Name);
+                    var type = target.GetType();
+                    if (target is Type tyVal)
+                    {
+                        type = tyVal;
+                    }
+                    var field = type.GetField(get.Name);
                     if (field == null) throw new PurinRuntimeException($"field {get.Name} does not exist on object {target}");
                     field.SetValue(target, value);
                     return value;
@@ -94,10 +194,21 @@ namespace Purin.Interpreter
 
         public object? Accept(ExprBinary exprBinary)
         {
-            throw new NotImplementedException();
+            if (!_operatorLookup.TryGetValue(exprBinary.Operator, out var translatedOp) || translatedOp == null)
+                throw new PurinRuntimeException($"unable to find valid lookup for operator {exprBinary.Operator}");
+
+            var lhs = Accept(exprBinary.Lhs);
+            var rhs = Accept(exprBinary.Rhs);
+
+            if (lhs == null) throw new PurinRuntimeException($"unable to call operator {exprBinary.Operator} on null value");
+            if (rhs == null) throw new PurinRuntimeException($"error during binary operation {lhs.GetType().Name} {exprBinary.Operator} ? unable to determine type of right hand side");
+
+            var operatorMethod = lhs.GetType().GetBinaryOperator(translatedOp, ref rhs);
+            if (operatorMethod == null) throw new PurinRuntimeException($"type {lhs.GetType().Name} does not contain definition for operator {translatedOp}");
+            return operatorMethod.Invoke(lhs.GetType(), new object?[2] {lhs, rhs});
         }
 
-        public object? Accept(ExprInitializer exprInitializer)
+        public object? Accept(ExprInitializer exprInitializer) 
         {
             var type = Accept(exprInitializer.Type);
             if (type is Type ty)
@@ -113,22 +224,27 @@ namespace Purin.Interpreter
         public object? Accept(ExprCall call)
         {
             var args = call.Arguments.Select(x => Accept(x)).ToArray();
-            if (call.Callee is ExprGet get && get.RetrievalType == Parser.Models.Enums.RetrievalType.Method)
+            if (call.Callee is ExprGet get && get.RetrievalType == RetrievalType.Method)
             {
                 var lhs = Accept(get.Lhs);
                 if (lhs == null) throw new PurinRuntimeException("unable to perform call on null object");
-                var methodInfo = FindMethodHelper(get.Name, lhs.GetType(), args);
-                if (methodInfo == null) throw new PurinRuntimeException($"method {get.Name} not found for type {lhs.GetType().Name}");
-                if (methodInfo.IsStatic) return methodInfo.Invoke(lhs.GetType(), args);
-                return methodInfo.Invoke(lhs, args);
+                var type = lhs.GetType();
+                if (lhs is Type tyVal)
+                {
+                    type = tyVal;
+                }
+                var methodInfo = FindMethodHelper(get.Name, type, args);
+                if (methodInfo == null) throw new PurinRuntimeException($"method {get.Name} not found for type {type.Name}");
+                if (methodInfo.IsStatic) return methodInfo.CleanArgumentsThenInvoke(type, args);
+                return methodInfo.CleanArgumentsThenInvoke(lhs, args);
             }
 
             var callee = Accept(call.Callee);
             if (callee == null) throw new PurinRuntimeException("unable to perform call on null object");
             if (callee is MethodInfo method)
             {
-                if (method.IsStatic) return method.Invoke(callee.GetType(), args);
-                return method.Invoke(callee, args);
+                if (method.IsStatic) return method.CleanArgumentsThenInvoke(callee.GetType(), args);
+                return method.CleanArgumentsThenInvoke(callee, args);
             }
             else throw new PurinRuntimeException($"expected methodinfo or ICallable but got object of type {callee.GetType()}");
         }
@@ -221,17 +337,19 @@ namespace Purin.Interpreter
 
         public object? Accept(ExprLiteral literal)
         {
+            if (literal.Value == null) return null;
+            if (_typeTranslations.TryGetValue(literal.Value.GetType(), out var translation))
+            {
+                var ctor = translation.GetConstructor(new Type[] { literal.Value.GetType() });
+                if (ctor == null) throw new PurinRuntimeException($"attempt to translate type {literal.Value.GetType().Name} to type {translation.Name} failed.");
+                return ctor.Invoke(new object[] { literal.Value });
+            }
             return literal.Value;
         }
 
         public void Accept(BaseStatement statement)
         {
            statement.Visit(this);
-        }
-
-        public void Accept(StmtLib load)
-        {
-            _context.RegisterAssembly(load.Path);
         }
 
         public void Accept(StmtVariableDeclaration stmtVariableDeclaration)
@@ -260,22 +378,7 @@ namespace Purin.Interpreter
             if (err != null) throw err;
         }
 
-        public void Accept(StmtEntry stmtEntry)
-        {
-            _entry = stmtEntry.Target;
-        }
-
-        public void Accept(StmtUse stmtUse)
-        {
-            // Used by the compiler,
-            // does nothing in runtime
-        }
-
-        public void Accept(StmtProvideLib stmtProvideLib)
-        {
-            // Used by the compiler,
-            // does nothing in runtime
-        }
+        
 
         public void Accept(StmtExpression stmtExpression)
         {
@@ -320,22 +423,6 @@ namespace Purin.Interpreter
             else throw new PurinRuntimeException("expect condition to evaluate to boolean value");
         }
 
-        public void Accept(StmtSubRoutine stmtSubroutine)
-        {
-            var parameters = stmtSubroutine.Parameters.Select(param =>
-            {
-                var tyVal = Accept(param.TypeName);
-                if (tyVal is Type type)
-                {
-                    object? value = null;
-                    if (param.Value != null) value = Accept(param.Value);
-                    return new SubRoutine.Parameter(type, param.Name, param.Value != null,  value);
-                }
-                throw new PurinRuntimeException($"expected parameter type but got {tyVal?.GetType()}"); 
-            });
-            _context.Environment.Define(stmtSubroutine.Name, new SubRoutine(stmtSubroutine.Name, parameters.ToList(), stmtSubroutine.Statements));
-        }
-
         public void Accept(StmtBreak stmtBreak)
         {
             throw new BreakException();
@@ -356,6 +443,11 @@ namespace Purin.Interpreter
                 return;
             }
             throw new PurinRuntimeException($"expect ISubRoutine but got object {value}");
+        }
+
+        public object? Accept(ExprLambda exprLambda)
+        {
+            throw new PurinRuntimeException("lambda functions are not supported by runtime");
         }
     }
 }

@@ -123,7 +123,7 @@ namespace Purin.Parser.Helpers
 
         protected Token current()
         {
-            return _current;
+            return _current ?? throw new IndexOutOfRangeException("current() was null");
         }
     }
 }

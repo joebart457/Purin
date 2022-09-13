@@ -1,0 +1,19 @@
+
+
+.lib "C:\\Code\\Utils\\Logging\\CliLogger\\CliLogger\\CliLogger\\bin\\Release\\net6.0\\CliLogger.dll"
+
+.entry Main
+
+.sub Main [echo:cstype(String)]
+	cstype(Logger.CliLogger):LogInfo(echo);
+	cstype(Console):ReadKey();
+	var x = 2;
+	x = 1 + x;
+	if (x >2) cstype(Console):WriteLine("value of x is less than 2");
+	cstype(Console):ReadKey();
+	var y = new cstype(List`1)<cstype(System.String)>();
+	y:Add("Hello,":ToString());
+	y:Add("World!":ToString());
+	cstype(Console):WriteLine(cstype(System.String):Join(" => ":ToString(), y));
+	cstype(Console).ForegroundColor = cstype(ConsoleColor).$Green;
+.end

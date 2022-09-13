@@ -2,6 +2,7 @@
 using Purin.Parser.Helpers;
 using Purin.Parser.Models;
 using Purin.Parser.Models.Constants;
+using Purin.Parser.Models.Directives;
 using Purin.Parser.Models.Enums;
 using Purin.Parser.Models.Expressions;
 using Purin.Parser.Models.Statements;
@@ -22,32 +23,32 @@ namespace Purin.Parser
         public DefaultParser()
         {
         }
-        public IEnumerable<BaseStatement> Parse(string text)
+        public IEnumerable<BaseDirective> Parse(string text)
         {
             var tokenizer = DefaultTokenizer ?? DefaultTokenizerBuilder.Build();
 
             var tokens = tokenizer.Tokenize(text);
             init(tokens);
-            IList<BaseStatement> statements = new List<BaseStatement>();
+            var statements = new List<BaseDirective>();
             while (!atEnd() && !match(TokenTypes.EOF))
             {
-                statements.Add(ParseTopLevelStatement());
+                statements.Add(ParseDirective());
             }
             return statements;
         }
 
-        public IEnumerable<BaseStatement> Parse(IEnumerable<Token> tokens)
+        public IEnumerable<BaseDirective> Parse(IEnumerable<Token> tokens)
         {
             init(tokens);
-            IList<BaseStatement> statements = new List<BaseStatement>();
+            var statements = new List<BaseDirective>();
             while (!atEnd() && !match(TokenTypes.EOF))
             {
-                statements.Add(ParseTopLevelStatement());
+                statements.Add(ParseDirective());
             }
             return statements;
         }
 
-        private BaseStatement ParseTopLevelStatement()
+        private BaseDirective ParseDirective()
         {
             if (match(TokenTypes.ProvideLib))
             {
@@ -73,32 +74,56 @@ namespace Purin.Parser
             throw new Exception($"only top level statements permitted. illegal token {current()}.");
         }
 
-        private BaseStatement ParseEntry()
+        private BaseDirective ParseEntry()
         {
             var loc = previous().Loc;
             var target = ParseExpression();
-            return new StmtEntry(target, loc);
+            return new DirectiveEntry(target, loc);
         }
 
-        private BaseStatement ParseUse()
+        private BaseDirective ParseUse()
         {
             var loc = previous().Loc;
             var target = ParseExpression();
-            return new StmtUse(target, loc);
+            return new DirectiveUse(target, loc);
         }
 
-        private BaseStatement ParseLib()
+        private BaseDirective ParseLib()
         {
             var target = consume(TokenTypes.TTString, "expect target after .lib");
-            return new StmtLib(target.Lexeme, target.Loc);
+            return new DirectiveLib(target.Lexeme, target.Loc);
         }
 
-        private BaseStatement ParseProvideLib()
+        private BaseDirective ParseProvideLib()
         {
             var target = consume(TokenTypes.TTString, "expect target after .providelib");
-            return new StmtProvideLib(target.Lexeme, target.Loc);
+            return new DirectiveProvideLib(target.Lexeme, target.Loc);
         }
 
+        private BaseDirective ParseSubRoutine()
+        {
+            Token fnName = consume(TokenTypes.TTWord, "expect subroutine name");
+            var parameters = new List<DirectiveSubroutine.DirectiveSubroutineParameter>();
+            while (match(TokenTypes.LBracket))
+            {
+                var name = consume(TokenTypes.TTWord, "expect parameter name").Lexeme;
+                consume(TokenTypes.Colon, "expect :Type in parameter declaration");
+                var typeName = ParseExpression();
+                BaseExpression? value = null;
+                if (match(TokenTypes.Equal))
+                {
+                    value = ParseExpression();
+                }
+                consume(TokenTypes.RBracket, "expect enclosing ]");
+                parameters.Add(new DirectiveSubroutine.DirectiveSubroutineParameter(name, typeName, value));
+            }
+            var statements = new List<BaseStatement>();
+            while (!match(TokenTypes.End))
+            {
+                statements.Add(ParseInnerStatement());
+            }
+            return new DirectiveSubroutine(fnName.Lexeme, parameters, statements, fnName.Loc);
+        }
 
         private BaseStatement ParseInnerStatement()
         {
@@ -143,9 +168,9 @@ namespace Purin.Parser
                 {
                     args.Add(ParseExpression());
                 } while (match(TokenTypes.Comma));
+                consume(TokenTypes.RParen, "expect enclosing ) in call");
             }
 
-            consume(TokenTypes.RParen, "expect enclosing ) in call");
             return new StmtCallSubRoutine(name.Lexeme, args, name.Loc);
         }
 
@@ -159,31 +184,6 @@ namespace Purin.Parser
         {
             var token = consume(TokenTypes.SemiColon, "expect ; at end of statement"); ;
             return new StmtContinue(token.Loc);
-        }
-
-        private BaseStatement ParseSubRoutine()
-        {
-            Token fnName = consume(TokenTypes.TTWord, "expect subroutine name");
-            var parameters = new List<StmtSubRoutine.StmtSubRoutineParameter>();
-            while (match(TokenTypes.LBracket))
-            {
-                var name = consume(TokenTypes.TTWord, "expect parameter name").Lexeme;
-                consume(TokenTypes.Colon, "expect :Type in parameter declaration");
-                var typeName = ParseExpression();
-                BaseExpression? value = null;
-                if (match(TokenTypes.Equal))
-                {
-                    value = ParseExpression();
-                }
-                consume(TokenTypes.RBracket, "expect enclosing ]");
-                parameters.Add(new StmtSubRoutine.StmtSubRoutineParameter(name, typeName, value));
-            }
-            var statements = new List<BaseStatement>();
-            while (!match(TokenTypes.End))
-            {
-                statements.Add(ParseInnerStatement());
-            }
-            return new StmtSubRoutine(fnName.Lexeme, parameters, statements, fnName.Loc);
         }
         private BaseStatement ParseIfElse()
         {
@@ -278,10 +278,10 @@ namespace Purin.Parser
         private BaseExpression ParseBinaryHelper(List<string> operators, int index)
         {
             if (index >= operators.Count) return ParseUnary();
-            var expr = ParseBinaryHelper(operators, index++);
+            var expr = ParseBinaryHelper(operators, index + 1);
             while (match(operators[index]))
             {
-                expr = new ExprBinary(previous().Lexeme, expr, ParseBinaryHelper(operators, index), previous().Loc);
+                expr = new ExprBinary(previous().Lexeme, expr, ParseExpression(), previous().Loc);
             }
             return expr;
         }
@@ -342,9 +342,10 @@ namespace Purin.Parser
                         {
                             args.Add(ParseExpression());
                         } while (match(TokenTypes.Comma));
+                        consume(TokenTypes.RParen, "expect enclosing ) in call");
                     }
 
-                    consume(TokenTypes.RParen, "expect enclosing ) in call");
+                    
                     expr = new ExprCall(expr, args, previous().Loc);
                 }
                 else
@@ -441,6 +442,38 @@ namespace Purin.Parser
                 var expr = ParseExpression();
                 consume(TokenTypes.RParen, "expect enclosing ) in grouping");
                 return new ExprGroup(expr, previous().Loc);
+            }
+
+            if (match(TokenTypes.New))
+            {
+                var expr = ParseGetOrCall();
+
+                if (expr is ExprCall call)
+                {
+                    return new ExprInitializer(call.Callee, call.Arguments, call.Loc);
+                }
+                else throw new Exception("expect ctor call after new");
+            }
+
+            if (match(TokenTypes.DoubleLBracket))
+            {
+                var returnType = ParseExpression();
+                var token = consume(TokenTypes.DoubleRBracket, "expect enclosing ]] in lambda");
+                var parameters = new List<ExprLambda.ExprLambdaParameter>();
+                while (match(TokenTypes.LBracket))
+                {
+                    var name = consume(TokenTypes.TTWord, "expect parameter name").Lexeme;
+                    consume(TokenTypes.Colon, "expect :Type in parameter declaration");
+                    var typeName = ParseExpression();
+                    consume(TokenTypes.RBracket, "expect enclosing ]");
+                    parameters.Add(new ExprLambda.ExprLambdaParameter(name, typeName));
+                }
+                var statements = new List<BaseStatement>();
+                while (!match(TokenTypes.End))
+                {
+                    statements.Add(ParseInnerStatement());
+                }
+                return new ExprLambda("lambda", parameters, statements, returnType, token.Loc);
             }
 
             throw new Exception($"unexpected token in primary {current()}");

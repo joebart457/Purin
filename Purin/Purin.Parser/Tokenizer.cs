@@ -120,10 +120,6 @@ namespace Purin.Parser
 					return tokenliteral();
 				}
 
-				if (_cCurrent == '_' || Char.IsLetter(_cCurrent))
-				{
-					return word();
-				}
 
 				foreach (TokenizerRule rule in _rules)
 				{
@@ -181,6 +177,11 @@ namespace Purin.Parser
 					mlcomment();
 					bMlCommentFlag = false;
 					continue;
+				}
+
+				if (_cCurrent == '_' || Char.IsLetter(_cCurrent))
+				{
+					return word();
 				}
 
 				if (Char.IsDigit(_cCurrent))

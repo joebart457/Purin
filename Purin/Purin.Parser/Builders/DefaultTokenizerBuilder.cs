@@ -25,7 +25,7 @@ namespace Purin.Parser.Builders
 
             List<TokenizerRule> rules = new List<TokenizerRule>();
             rules.Add(new TokenizerRule(TokenTypes.StringEnclosing, "\""));
-            rules.Add(new TokenizerRule(TokenTypes.TTString, "'", null, true, "'"));
+            rules.Add(new TokenizerRule(TokenTypes.TTString, "`", null, true, "'"));
             rules.Add(new TokenizerRule(TokenTypes.StringCatalyst, "$"));
             rules.Add(new TokenizerRule(TokenTypes.EOLComment, "---"));
             rules.Add(new TokenizerRule(TokenTypes.EOLComment, "//"));
@@ -71,13 +71,16 @@ namespace Purin.Parser.Builders
             rules.Add(new TokenizerRule(TokenTypes.Continue, "continue"));
             rules.Add(new TokenizerRule(TokenTypes.Break, "break"));
             rules.Add(new TokenizerRule(TokenTypes.Sub, "sub:"));
-            rules.Add(new TokenizerRule(TokenTypes.TypeRef, "::", null, true));
+            rules.Add(new TokenizerRule(TokenTypes.TypeRef, "cstype(", null, true, ")"));
             rules.Add(new TokenizerRule(TokenTypes.ProvideLib, ".providelib"));
             rules.Add(new TokenizerRule(TokenTypes.Lib, ".lib"));
             rules.Add(new TokenizerRule(TokenTypes.Use, ".use"));
             rules.Add(new TokenizerRule(TokenTypes.Entry, ".entry"));
             rules.Add(new TokenizerRule(TokenTypes.End, ".end"));
             rules.Add(new TokenizerRule(TokenTypes.DotSub, ".sub"));
+            rules.Add(new TokenizerRule(TokenTypes.New, "new"));
+            rules.Add(new TokenizerRule(TokenTypes.DoubleLBracket, "[["));
+            rules.Add(new TokenizerRule(TokenTypes.DoubleRBracket, "]]"));
 
             rules.AddRange(additionalRules ?? Enumerable.Empty<TokenizerRule>());
 

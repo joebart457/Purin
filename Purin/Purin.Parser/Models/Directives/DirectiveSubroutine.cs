@@ -1,21 +1,22 @@
 ﻿using Purin.Parser.Interfaces;
 using Purin.Parser.Models.Expressions;
+using Purin.Parser.Models.Statements;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Purin.Parser.Models.Statements
+namespace Purin.Parser.Models.Directives
 {
-    public class StmtSubRoutine: BaseStatement
+    public class DirectiveSubroutine : BaseDirective
     {
-        public class StmtSubRoutineParameter
+        public class DirectiveSubroutineParameter
         {
             public string Name { get; set; } = "";
             public BaseExpression TypeName { get; set; }
             public BaseExpression? Value { get; set; }
-            public StmtSubRoutineParameter(string name, BaseExpression type, BaseExpression? value = null)
+            public DirectiveSubroutineParameter(string name, BaseExpression type, BaseExpression? value = null)
             {
                 Name = name;
                 TypeName = type;
@@ -23,11 +24,11 @@ namespace Purin.Parser.Models.Statements
             }
         }
         public string Name { get; set; }
-        public List<StmtSubRoutineParameter> Parameters { get; set; }
+        public List<DirectiveSubroutineParameter> Parameters { get; set; }
         public List<BaseStatement> Statements { get; set; }
 
-        public StmtSubRoutine(string name, List<StmtSubRoutineParameter> parameters, List<BaseStatement> statements, Location loc)
-            : base("StmtSubRoutine", loc)
+        public DirectiveSubroutine(string name, List<DirectiveSubroutineParameter> parameters, List<BaseStatement> statements, Location loc)
+            : base("DirectiveSubroutine", loc)
         {
             Name = name;
             Parameters = parameters;

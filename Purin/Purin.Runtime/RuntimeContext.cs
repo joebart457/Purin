@@ -1,4 +1,5 @@
-﻿using Purin.Runtime.Models.Exceptions;
+﻿using Purin.Runtime.Extensions;
+using Purin.Runtime.Models.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,6 +35,17 @@ namespace Purin.Runtime
             Register(typeof(Ty));
         }
 
+        public void RegisterFullNamespaceOnly<Ty>()
+        {
+            RegisterFullNamespaceOnly(typeof(Ty));
+        }
+
+        public void RegisterFullNamespaceOnly(Type type)
+        {
+            AddToDefinitions(type.FullName, type);
+            AddToDefinitions(type.AssemblyQualifiedName, type);
+        }
+
         public void Register(Type type)
         {
             AddClassDefinition(type);
@@ -47,6 +59,10 @@ namespace Purin.Runtime
             return result[0];
         }
 
+        public Dictionary<string, List<Type>> GetRegisteredTypes()
+        {
+            return _types;
+        }
         private void AddClassDefinition(Type type)
         {
             AddToDefinitions(type.Name, type);

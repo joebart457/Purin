@@ -6,13 +6,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Purin.Parser.Models.Statements
+namespace Purin.Parser.Models.Directives
 {
-    public class StmtEntry : BaseStatement
+    public class DirectiveEntry : BaseDirective
     {
         public BaseExpression Target { get; set; }
-        public StmtEntry(BaseExpression target, Location loc)
-            : base("StmtEntry", loc)
+        public DirectiveEntry(BaseExpression target, Location loc)
+            : base("DirectiveEntry", loc)
         {
             Target = target;
         }

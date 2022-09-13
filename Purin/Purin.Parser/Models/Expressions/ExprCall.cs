@@ -9,7 +9,7 @@ namespace Purin.Parser.Models.Expressions
 {
     public class ExprCall : BaseExpression
     {
-        public BaseExpression Callee { get; set; };
+        public BaseExpression Callee { get; set; }
         public IList<BaseExpression> Arguments { get; set; } = new List<BaseExpression>();
         public ExprCall(BaseExpression callee, IList<BaseExpression> arguments, Location loc)
             : base("ExprCall", loc)

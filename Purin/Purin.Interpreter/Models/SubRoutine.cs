@@ -1,4 +1,5 @@
-﻿using Purin.Interpreter.Interfaces;
+﻿using Purin.Interpreter.Extensions;
+using Purin.Interpreter.Interfaces;
 using Purin.Interpreter.Models.Exceptions;
 using Purin.Parser.Interfaces;
 using Purin.Parser.Models.Statements;
@@ -52,8 +53,19 @@ namespace Purin.Interpreter.Models
                     if (Parameters[i].Type == args[i]?.GetType())
                     {
                         interpreter.Environment.Define(Parameters[i].Name, args[i]);
+                        continue;
+                    }else
+                    {
+                        try
+                        {
+                            interpreter.Environment.Define(Parameters[i].Name, args[i].ChangeType(Parameters[i].Type));
+                            continue;
+                        }
+                        catch (InvalidCastException)
+                        {
+                            throw new PurinRuntimeException($"parameter type mismatch: unable to convert {args[i]?.GetType().Name} to type {Parameters[i].Type.Name}");
+                        }
                     }
-                    else throw new PurinRuntimeException($"parameter type mismatch: expected {Parameters[i].Type.Name} but got {args[i]?.GetType().Name}");
                 }
 
                 // for the remining parameters, try to use their default value

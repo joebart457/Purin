@@ -5,15 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Purin.Parser.Models.Statements
+namespace Purin.Parser.Models.Directives
 {
-    public class StmtLib : BaseStatement
+    public class DirectiveProvideLib : BaseDirective
     {
         public string Path { get; set; } = "";
-        public StmtLib(string path, Location loc)
-            : base("StmtLib", loc)
+        public DirectiveProvideLib(string path, Location loc)
+            : base("DirectiveProvideLib", loc)
         {
-            Path = path;    
+            Path = path;
         }
 
         public override void Visit(IInterpreter interpreter)

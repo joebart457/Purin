@@ -44,6 +44,8 @@ namespace Purin.Parser.Models.Constants
         public const string DoubleColon = "DoubleColon";
         public const string DoubleQuestionMark = "DoubleQuestionMark";
         public const string DoubleDot = "DoubleDot";
+        public const string DoubleRBracket = "DoubleRBracket";
+        public const string DoubleLBracket = "DoubleLBracket";
         public const string LParen = "LParen";
         public const string RParen = "RParen";
         public const string LBracket = "LBracket";
@@ -68,6 +70,7 @@ namespace Purin.Parser.Models.Constants
         public const string Return = "Return";
         public const string Continue = "Continue";
         public const string Break = "Break";
+        public const string New = "New";
         public const string Sub = "Sub";
 
         public const string TypeRef = "TypeRef";

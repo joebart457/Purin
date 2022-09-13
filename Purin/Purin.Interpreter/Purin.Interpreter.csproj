@@ -1,13 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Purin.NativeTypes\Purin.NativeTypes.csproj" />
     <ProjectReference Include="..\Purin.Parser\Purin.Parser.csproj" />
     <ProjectReference Include="..\Purin.Runtime\Purin.Runtime.csproj" />
   </ItemGroup>
