@@ -1,0 +1,1 @@
+docker run -it -p 4444:80 joebart457/purin-pm-server:0.0.1

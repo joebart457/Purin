@@ -10,8 +10,8 @@ namespace Purin.Parser.Models.Expressions
     public class ExprGeneric : BaseExpression
     {
         public BaseExpression Lhs { get; set; }
-        public List<ExprTypeReference> TypeArguments { get; set; }
-        public ExprGeneric(BaseExpression lhs, List<ExprTypeReference> typeArguments, Location loc)
+        public List<BaseExpression> TypeArguments { get; set; }
+        public ExprGeneric(BaseExpression lhs, List<BaseExpression> typeArguments, Location loc)
             : base("ExprGeneric", loc)
         {
             Lhs = lhs;

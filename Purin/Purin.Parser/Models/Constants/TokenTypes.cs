@@ -82,5 +82,7 @@ namespace Purin.Parser.Models.Constants
         public const string Entry = "Entry";
         public const string End = "End";
         public const string DotSub = "DotSub";
+        public const string Wd = "Wd";
+        public const string Do = "Do";
     }
 }

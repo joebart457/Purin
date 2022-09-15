@@ -12,7 +12,7 @@ namespace Purin.Runtime
 {
     public class RuntimeContext
     {
-        public Environment Environment = new Environment();
+        public Environment Environment { get; set; } = new Environment();
         private Dictionary<string, List<Type>> _types = new Dictionary<string, List<Type>>();
         public RuntimeContext()
         {
@@ -23,7 +23,7 @@ namespace Purin.Runtime
         {
             var asm = Assembly.LoadFrom(pathToAssembly);
             if (asm == null) throw new PurinLoadException($"unable to load assembly from path {pathToAssembly}");
-            var types = asm.GetTypes();
+            var types = asm.GetExportedTypes();
             foreach (var type in types)
             {
                 Register(type);
@@ -33,6 +33,11 @@ namespace Purin.Runtime
         public void Register<Ty>()
         {
             Register(typeof(Ty));
+        }
+        public void Register(Type type)
+        {
+            AddClassDefinition(type);
+            AddToEnvironment(type);
         }
 
         public void RegisterFullNamespaceOnly<Ty>()
@@ -44,11 +49,7 @@ namespace Purin.Runtime
         {
             AddToDefinitions(type.FullName, type);
             AddToDefinitions(type.AssemblyQualifiedName, type);
-        }
-
-        public void Register(Type type)
-        {
-            AddClassDefinition(type);
+            AddToEnvironment(type);
         }
 
         public Type GetType(string typeName)
@@ -79,6 +80,11 @@ namespace Purin.Runtime
                 return;
             }
             _types.Add(key, new List<Type> { type });
+        }
+
+        private void AddToEnvironment(Type type)
+        {
+            Environment.AddTypeDefinition(type);
         }
 
     }

@@ -11,6 +11,7 @@ namespace Purin.Runtime.Models
     {
         private Environment? _enclosing = null;
         private Dictionary<string, object?> _lookup = new Dictionary<string, object?>();
+        public Dictionary<string, object?> Lookup { get { return _lookup; } }
         public Environment(Environment? enclosing = null)
         {
             _enclosing = enclosing;
@@ -44,6 +45,38 @@ namespace Purin.Runtime.Models
             if (oldValue?.GetType() != value?.GetType())
                 throw new PurinRuntimeException($"types: {oldValue?.GetType()} {value?.GetType()} do not match or cannot be interpolated");
             _lookup[key] = value;
+        }
+
+        public void AddTypeDefinition(Type type)
+        {
+            var namespaces = type.Namespace?.Split('.') ?? new string[0];
+            var definitionTarget = this;
+            foreach(var ns in namespaces)
+            {
+                if (!(definitionTarget.TryGetValue(ns, out Environment? env) && env != null))
+                {
+                    // We want to make sure not to pass anything to enclosing here
+                    // this is a special case because these are namespaces,
+                    // NOT objects inheriting properties
+                    env = new Environment();
+                    definitionTarget.Define(ns, env);
+                }
+
+                definitionTarget = env;
+            }
+            definitionTarget.Define(type.Name, type);
+        }
+
+        private bool TryGetValue<Ty>(string key, out Ty? val)
+        {
+            if (_lookup.TryGetValue(key, out var value) && value is Ty tyVal)
+            {
+                val = tyVal;
+                return true;
+            }
+            val = default(Ty);
+            return false;
+
         }
     }
 }

@@ -124,6 +124,16 @@ namespace Purin.Interpreter
             _context.Environment.Define(directiveSubroutine.Name, new SubRoutine(directiveSubroutine.Name, parameters.ToList(), directiveSubroutine.Statements));
         }
 
+        public void Accept(DirectiveDo directiveDo)
+        {
+            Accept(directiveDo.Target);
+        }
+
+        public void Accept(DirectiveWorkingDirectory directiveWorkingDirectory)
+        {
+            Directory.SetCurrentDirectory(directiveWorkingDirectory.Path);
+        }
+
 
         public object? Accept(BaseExpression expression)
         {
@@ -276,27 +286,31 @@ namespace Purin.Interpreter
             if (lhs == null) throw new PurinRuntimeException($"unable to access {get.Name} of null");
             var type = lhs.GetType();
             if (lhs is Type ty) type = ty;
-            if (get.RetrievalType == Parser.Models.Enums.RetrievalType.Property)
+            if (get.RetrievalType == RetrievalType.Property)
             {
+                if (lhs is Environment env)
+                {
+                    return env.Get(get.Name);
+                }
                 var property = type.GetProperty(get.Name);
                 if (property == null) throw new PurinRuntimeException($"unable to retrieve property {get.Name} of object {lhs}");
                 return property.GetValue(lhs);
             }
-            if (get.RetrievalType == Parser.Models.Enums.RetrievalType.Field)
+            if (get.RetrievalType == RetrievalType.Field)
             {
                 var field = type.GetField(get.Name);
                 if (field == null) throw new PurinRuntimeException($"unable to retrieve field {get.Name} of object {lhs}");
                 return field.GetValue(lhs);
             }
             // This will also be handled separately in Accept(ExprCall)
-            if (get.RetrievalType == Parser.Models.Enums.RetrievalType.Method)
+            if (get.RetrievalType == RetrievalType.Method)
             {
                 var member = type.GetMethod(get.Name);
                 if (member == null) throw new PurinRuntimeException($"object {lhs} has no defined method {get.Name}");
                 return member;
             }
 
-            throw new PurinRuntimeException("unexpected error has occurred in the runtime");
+            throw new PurinRuntimeException($"type {type.Name} does not have {get.RetrievalType} '{get.Name}'");
         }
 
         public object? Accept(ExprTypeReference exprTypeReference)

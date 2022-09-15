@@ -11,7 +11,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purin.Interpreter", "Purin.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purin.Cmd", "Purin.Cmd\Purin.Cmd.csproj", "{FFC4F0F6-4DF0-4617-A842-39E664BFF193}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Purin.NativeTypes", "Purin.NativeTypes\Purin.NativeTypes.csproj", "{4A020B9B-64C3-45DE-A887-D5081200F2CC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purin.NativeTypes", "Purin.NativeTypes\Purin.NativeTypes.csproj", "{4A020B9B-64C3-45DE-A887-D5081200F2CC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purin.PackageManager.Server", "Purin.PackageManager.Server\Purin.PackageManager.Server.csproj", "{8E01B213-C3D2-4990-BE35-78B87CF677E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Purin.PackageManager.Client", "Purin.PackageManager.Client\Purin.PackageManager.Client.csproj", "{29033276-C996-411A-9168-0AB503C655E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Purin.PackageManager.Domain", "Purin.PackageManager.Domain\Purin.PackageManager.Domain.csproj", "{84074E25-2B0C-4280-B988-5FFFADA04FBA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +45,18 @@ Global
 		{4A020B9B-64C3-45DE-A887-D5081200F2CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A020B9B-64C3-45DE-A887-D5081200F2CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A020B9B-64C3-45DE-A887-D5081200F2CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E01B213-C3D2-4990-BE35-78B87CF677E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E01B213-C3D2-4990-BE35-78B87CF677E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E01B213-C3D2-4990-BE35-78B87CF677E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E01B213-C3D2-4990-BE35-78B87CF677E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29033276-C996-411A-9168-0AB503C655E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29033276-C996-411A-9168-0AB503C655E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29033276-C996-411A-9168-0AB503C655E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29033276-C996-411A-9168-0AB503C655E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84074E25-2B0C-4280-B988-5FFFADA04FBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84074E25-2B0C-4280-B988-5FFFADA04FBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84074E25-2B0C-4280-B988-5FFFADA04FBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84074E25-2B0C-4280-B988-5FFFADA04FBA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

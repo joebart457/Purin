@@ -5,15 +5,21 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>purin</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CliLogger" Version="1.1.0" />
     <PackageReference Include="CliParser" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Purin.Interpreter\Purin.Interpreter.csproj" />
     <ProjectReference Include="..\Purin.NativeTypes\Purin.NativeTypes.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
   </ItemGroup>
 
 </Project>

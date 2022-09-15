@@ -70,8 +70,29 @@ namespace Purin.Parser
             {
                 return ParseSubRoutine();
             }
+            if (match(TokenTypes.Wd))
+            {
+                return ParseWorkingDirectory();
+            }
+            if (match(TokenTypes.Do))
+            {
+                return ParseDo();
+            }
 
             throw new Exception($"only top level statements permitted. illegal token {current()}.");
+        }
+
+        private BaseDirective ParseDo()
+        {
+            var loc = previous().Loc;
+            var target = ParseExpression();
+            return new DirectiveDo(target, loc);
+        }
+
+        private BaseDirective ParseWorkingDirectory()
+        {
+            var target = consume(TokenTypes.TTString, "expect target path after .wd");
+            return new DirectiveWorkingDirectory(target.Lexeme, target.Loc);
         }
 
         private BaseDirective ParseEntry()
@@ -319,20 +340,22 @@ namespace Purin.Parser
                 }
                 else if (match(TokenTypes.LessThan))
                 {
-                    var typeArguments = new List<ExprTypeReference>();
+                    var typeArguments = new List<BaseExpression>();
                     if (!match(TokenTypes.GreaterThan))
                     {
                         do
                         {
-                            var type = consume(TokenTypes.TypeRef, "expect type reference");
-                            typeArguments.Add(new ExprTypeReference(type.Lexeme, type.Loc));
+                            // here we only allow for unary statements 
+                            // this way the parser isn't tripped up by the >
+                            // as it thinks it should be a binary expression then.
+                            typeArguments.Add(ParseUnary());
                         } while (match(TokenTypes.Comma));
                         consume(TokenTypes.GreaterThan, "expect enclosing >");
                     }
 
                     expr = new ExprGeneric(expr, typeArguments, previous().Loc);
                 }
-                if (match(TokenTypes.LParen))
+                else if (match(TokenTypes.LParen))
                 {
                     
                     var args = new List<BaseExpression>();

@@ -17,7 +17,8 @@ namespace Purin.Parser.Interfaces
         void Accept(DirectiveUse directiveUse);
         void Accept(DirectiveLib directiveLib);
         void Accept(DirectiveSubroutine directiveSubroutine);
-
+        void Accept(DirectiveDo directiveDo);
+        void Accept(DirectiveWorkingDirectory directiveWorkingDirectory);
 
         object? Accept(ExprNullableSwitch nullableSwitch);
         object? Accept(ExprUnary exprUnary);

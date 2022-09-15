@@ -1,4 +1,5 @@
 ﻿using CliParser;
+using Logger;
 using Purin.Interpreter;
 using Purin.NativeTypes;
 using Purin.Parser;
@@ -108,8 +109,31 @@ namespace Purin.Cmd.Services
             var directives = _parser.Parse(File.ReadAllText(scriptFile));
             _interpreter.Run(directives);
             var entry = _interpreter.GetEntry();
-            if (entry == null) Console.WriteLine("entry point is not defined");
+            if (entry == null) CliLogger.LogWarning("entry point is not defined");
             else entry.Call(_interpreter, args.Split().Select(x => (object)x).ToArray());
+        }
+
+        [Command("repl")]
+        public void Repl(bool translateTypes = false, bool excludeBuiltins = false, bool showExpandedErrors = false)
+        {
+            Setup(translateTypes, excludeBuiltins);
+            bool exitRequested = false;
+            while (!exitRequested)
+            {
+                CliLogger.Log(" > ", LogSeverity.LOGS, true, "");
+                var line = Console.ReadLine() ?? "";
+                if (line.ToLower() == "exit") break;
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                try
+                {
+                    var directives = _parser.Parse(line);
+                    _interpreter.Run(directives);
+
+                } catch (Exception ex)
+                {
+                    CliLogger.LogError($"ERROR --- {(showExpandedErrors? ex.ToString() : ex.Message)}");
+                }
+            }
         }
 
         [Command("inspect")]
@@ -118,11 +142,50 @@ namespace Purin.Cmd.Services
             Setup(translateTypes, excludeBuiltins);
             var directives = _parser.Parse(File.ReadAllText(scriptFile));
             _interpreter.Run(directives);
-            var types = _runtime.GetRegisteredTypes();
-            foreach(var kv in types)
+
+            InspectEnvironment(_runtime.Environment);
+        }
+
+        private static void InspectEnvironment(Runtime.Models.Environment environment, string pad = "")
+        {
+            foreach(var kv in environment.Lookup)
             {
-                var typeNames = string.Join($"{new string(' ', $"{kv.Key} := ".Length)}\n", kv.Value.Select(x => x.Name));
-                Console.WriteLine($"{kv.Key} := {typeNames}");
+                var key = $"{pad}{kv.Key} := ";
+                CliLogger.LogInfo($"{key}{kv.Value}");
+                if (kv.Value is Runtime.Models.Environment env)
+                {
+                    InspectEnvironment(env, pad + new string(' ', key.Length));
+                }
+            }
+        }
+
+        [Command("types")]
+        public void DisplayTypes(string scriptFile, bool translateTypes = false, bool excludeBuiltins = false)
+        {
+            Setup(translateTypes, excludeBuiltins);
+            var directives = _parser.Parse(File.ReadAllText(scriptFile));
+            _interpreter.Run(directives);
+            var types = _runtime.GetRegisteredTypes();
+            var typeDictionary = new Dictionary<Type, List<string>>();
+            foreach (var kv in types)
+            {
+                kv.Value.ForEach(ty =>
+                {
+                    if (typeDictionary.TryGetValue(ty, out var aliases))
+                    {
+                        aliases.Add(kv.Key);
+                    } else
+                    {
+                        typeDictionary[ty] = new List<string>() { kv.Key };
+                    }
+                });
+            }
+
+            foreach (var kv in typeDictionary)
+            {
+                var keyString = $"{kv.Key.FullName ?? kv.Key.Name} := ";
+                var typeNames = string.Join($"\n{new string(' ', keyString.Length)}", kv.Value);
+                CliLogger.LogInfo($"{keyString}{typeNames}");
             }
         }
     }

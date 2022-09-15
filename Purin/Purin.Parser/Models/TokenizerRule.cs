@@ -16,7 +16,8 @@ namespace Purin.Parser.Models
 		public string? Macro { get; set; }
 		public bool IsEnclosed { get; set; }
 		public string? Enclosing { get; set; }
-		public TokenizerRule(string type, string value, string? macro = null, bool isEnclosed = false, string? enclosing = null)
+		public bool IgnoreCase { get; set; }
+		public TokenizerRule(string type, string value, string? macro = null, bool isEnclosed = false, string? enclosing = null, bool ignoreCase = false)
 		{
 			Type = type;
 			Value = value;
@@ -30,6 +31,7 @@ namespace Purin.Parser.Models
 			{
 				Enclosing = enclosing;
 			}
+			IgnoreCase = ignoreCase;
 		}
 
 		public string GetValueOrMacro()

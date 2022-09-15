@@ -70,14 +70,21 @@ namespace Purin.Parser.Builders
             rules.Add(new TokenizerRule(TokenTypes.Var, "var"));
             rules.Add(new TokenizerRule(TokenTypes.Continue, "continue"));
             rules.Add(new TokenizerRule(TokenTypes.Break, "break"));
-            rules.Add(new TokenizerRule(TokenTypes.Sub, "sub:"));
-            rules.Add(new TokenizerRule(TokenTypes.TypeRef, "cstype(", null, true, ")"));
-            rules.Add(new TokenizerRule(TokenTypes.ProvideLib, ".providelib"));
-            rules.Add(new TokenizerRule(TokenTypes.Lib, ".lib"));
-            rules.Add(new TokenizerRule(TokenTypes.Use, ".use"));
-            rules.Add(new TokenizerRule(TokenTypes.Entry, ".entry"));
-            rules.Add(new TokenizerRule(TokenTypes.End, ".end"));
-            rules.Add(new TokenizerRule(TokenTypes.DotSub, ".sub"));
+            
+            // custom directives (ignore case)
+
+            rules.Add(new TokenizerRule(TokenTypes.Sub, "sub:", ignoreCase: true));
+            rules.Add(new TokenizerRule(TokenTypes.TypeRef, "cstype(", null, true, ")", ignoreCase: true));
+            rules.Add(new TokenizerRule(TokenTypes.TypeRef, "c#(", null, true, ")", ignoreCase: true));
+            rules.Add(new TokenizerRule(TokenTypes.ProvideLib, ".providelib", ignoreCase: true));
+            rules.Add(new TokenizerRule(TokenTypes.Lib, ".lib", ignoreCase: true));
+            rules.Add(new TokenizerRule(TokenTypes.Use, ".use", ignoreCase: true));
+            rules.Add(new TokenizerRule(TokenTypes.Entry, ".entry", ignoreCase: true));
+            rules.Add(new TokenizerRule(TokenTypes.End, ".end", ignoreCase: true));
+            rules.Add(new TokenizerRule(TokenTypes.DotSub, ".sub", ignoreCase: true));
+            rules.Add(new TokenizerRule(TokenTypes.Wd, ".wd", ignoreCase: true));
+            rules.Add(new TokenizerRule(TokenTypes.Do, ".do", ignoreCase: true));
+
             rules.Add(new TokenizerRule(TokenTypes.New, "new"));
             rules.Add(new TokenizerRule(TokenTypes.DoubleLBracket, "[["));
             rules.Add(new TokenizerRule(TokenTypes.DoubleRBracket, "]]"));

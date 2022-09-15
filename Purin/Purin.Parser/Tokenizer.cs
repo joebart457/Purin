@@ -123,7 +123,7 @@ namespace Purin.Parser
 
 				foreach (TokenizerRule rule in _rules)
 				{
-					if (CompareRule(lookAhead(Convert.ToUInt32(rule.Length)), rule.Value))
+					if (CompareRule(lookAhead(Convert.ToUInt32(rule.Length)), rule))
 					{
 						if (rule.Type == TokenTypes.EOLComment)
 						{
@@ -203,10 +203,10 @@ namespace Purin.Parser
 			return new Token(TokenTypes.EOF, TokenTypes.EOF, _nRow, _nColumn);
 		}
 
-		private bool CompareRule(string a, string b)
+		private bool CompareRule(string a, TokenizerRule rule)
         {
-			if (_settings.IgnoreCase) return a?.ToLower() == b?.ToLower();
-			return a == b;
+			if (_settings.IgnoreCase || rule.IgnoreCase) return a?.ToLower() == rule.Value?.ToLower();
+			return a == rule.Value;
         }
 		private bool init(string text)
 		{
@@ -421,7 +421,7 @@ namespace Purin.Parser
 
 			foreach (TokenizerRule rule in _rules)
 			{
-				if (CompareRule(result.ToString(), rule.Value))
+				if (CompareRule(result.ToString(), rule))
 				{
 					type = rule.Type;
 					result.Clear();
